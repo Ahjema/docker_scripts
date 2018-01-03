@@ -4,4 +4,4 @@
 #./script_name.sh process
 #example ./find_process_container.sh gunicorn
 
-for i in `ps -ef | grep $1 | awk '{print $3}'`; do pbrun docker ps -q | xargs pbrun docker inspect --format '{{.State.Pid}}, {{.Name}}' | grep $i; done
+for i in `ps -ef | grep $1 | awk '{print $3}'`; do docker ps -q | xargs docker inspect --format '{{.State.Pid}}, {{.Name}}' | grep $i; done
