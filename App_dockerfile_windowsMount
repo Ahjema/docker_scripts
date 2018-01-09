@@ -1,0 +1,15 @@
+FROM some_base_image:latest
+
+WORKDIR /apps/
+COPY jenkins/workspace/path /apps/something/inside/image
+RUN yum -y install subversion
+RUN svn info /apps/something/inside/image >> app-versions.txt
+USER root
+ENV USER=Some_user_if_you_need_this_var
+ENV PYTHONPATH=$PYTHONPATH:/apps/something/inside/image
+RUN cp /apps/something/inside/image/config_env.txt /apps/something/inside/image/config.txt
+RUN yum -y install cifs-utils
+RUN mkdir -p /mount/point
+COPY mount.sh /apps/mount.sh
+RUN chmod +x /apps/mount.sh
+RUN echo "//windows/mount/point      /mount/point     cifs    rw,user,domain=MIO 0 0" >> /etc/fstab
