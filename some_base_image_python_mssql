@@ -1,0 +1,87 @@
+FROM centos:centos7
+#ADD epel-release-7-7.noarch.rpm /root/epel-release-7-7.noarch.rpm
+RUN yum -y install epel-release
+#RUN rpm -iUvh /root/epel-release-7-7.noarch.rpm
+RUN yum -y update
+RUN yum -y install python-pip \
+           gcc \
+           gcc-c++ \
+           make \
+           python-devel \
+           # for python-ldap \
+           openldap-devel \
+           # for unixODBC and FreeTDS \
+           gcc-gfortran \
+           lapack-devel \
+           unixODBC-devel \
+           # for cruptography \
+           libffi-devel \
+           openssl-devel \
+           wget
+
+#Install Deps for PIP packages
+RUN yum -y install libpng-devel freetype-devel libxml++-devel libxml2-devel libxslt-devel
+
+#ADD /freetds-patched.tar.gz /root
+RUN cd /root ; \
+wget "https://sources.voidlinux.eu/freetds-1.00.27/freetds-1.00.27.tar.gz"; \
+gunzip *.gz ; \
+tar -xvf freetds* ;
+
+ADD /odbcinst.ini /etc
+
+# FreeTDS for MSSQL 2016 compatibility and Cluster support
+RUN cd /root && \
+    cd freetds-1.00.27/ && \
+    ./configure && \
+    make && \
+    make install
+
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir --upgrade setuptools
+
+RUN pip install --no-cache-dir \
+Cython==0.21.1 \
+itsdangerous==0.24 \
+Jinja2==2.7.3 \
+kazoo==2.2.1 \
+lockfile==0.10.2 \
+Flask==0.10.1 \
+gevent==1.1.1 \
+greenlet==0.4.9 \
+SQLAlchemy==0.9.7 \
+tabulate==0.7.5 \
+xlrd==0.9.3 \
+XlsxWriter==0.9.2
+RUN pip install --index-url http://drchi-quant01/linux/simple/ --trusted-host drchi-quant01 Werkzeug==0.9.6
+RUN pip install --index-url http://drchi-quant01/linux/simple/ --trusted-host drchi-quant01 numpy==1.11.0
+RUN pip install --index-url http://drchi-quant01/linux/simple/ --trusted-host drchi-quant01 pandas==0.16.2
+RUN pip install --index-url http://drchi-quant01/linux/simple/ --trusted-host drchi-quant01 scipy==0.17.0
+RUN pip install --index-url http://drchi-quant01/linux/simple/ --trusted-host drchi-quant01 pyDes==2.0.0
+RUN pip install --index-url http://drchi-quant01/linux/simple/ --trusted-host drchi-quant01 ceODBC==2.0.1
+RUN pip install arrow==0.5.4
+RUN pip install avro==1.8.0
+RUN pip install pykafka==2.1.0
+RUN pip install redis==2.10.3
+RUN pip install --no-cache-dir http://www.bytereef.org/software/mpdecimal/releases/cdecimal-2.3.tar.gz
+RUN pip install pandas==0.16.2
+RUN pip install numpy==1.11.0
+RUN pip install --index-url http://drchi-quant01/linux/simple/ --trusted-host drchi-quant01 python-ldap==2.4.19
+RUN pip install --no-cache-dir patsy==0.3.0
+RUN pip install --no-cache-dir coverage==4.4.2
+
+
+WORKDIR /apps/
+# Installing python dependencies
+COPY requirements.txt /apps
+RUN pip install --no-cache-dir -r requirements.txt
+
+RUN mkdir -p /apps/app
+COPY app /apps/app
+
+RUN yum -y install subversion
+RUN svn info /apps/app > app-versions.txt
+
+ENV TDSVER=7.2
+ENV PYTHONPATH="/apps/app"
+ENV USER=$USER
